@@ -3,6 +3,7 @@ package gocorona
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -113,6 +114,31 @@ func (c Client) GetDataByCountryCode(ctx context.Context, countryCode string, ti
 	}
 
 	endpoint := "/locations?country_code=" + countryCode + "&timelines=" + t
+	if err = c.makeGetRequest(ctx, endpoint, &data); err != nil {
+		return Locations{}, err
+	}
+	return data, nil
+}
+
+// GetDataByProvince returns all cases for a given province
+// Both the country code and the province need to be provided
+func (c Client) GetDataByProvince(ctx context.Context, countryCode string, province string, timelines bool) (data Locations, err error) {
+	if countryCode == "" {
+		return Locations{}, errors.New("country code required")
+	}
+	if province == "" {
+		return Locations{}, errors.New("province required")
+	}
+
+	t := "0"
+	if timelines {
+		t = "1"
+	}
+
+	// Encodes the province in case there are spaces in its name
+	parsedProvince := url.QueryEscape(province)
+
+	endpoint := "/locations?country_code=" + countryCode + "&province=" + parsedProvince + "&timelines=" + t
 	if err = c.makeGetRequest(ctx, endpoint, &data); err != nil {
 		return Locations{}, err
 	}
